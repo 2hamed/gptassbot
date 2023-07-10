@@ -182,7 +182,27 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	if chatMode[update.Message.Chat.ID] == "image" {
-		openaiClient.CreateImage()
+		resp, err := openaiClient.CreateImage(ctx, openai.ImageRequest{
+			Prompt: update.Message.Text,
+			N:      1,
+		})
+
+		var msg string
+		if err != nil {
+			log.Default().Println("Error:", err)
+			msg = "I'm sorry, I couldn't explain that. Please try again."
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: update.Message.Chat.ID,
+				Text:   msg,
+			})
+		}
+
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   resp.Data[0].URL,
+		})
+		delete(chatMode, update.Message.Chat.ID)
+		return
 	}
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
